@@ -9,8 +9,8 @@ eight days) are then combined, pixel by pixel, into one composite:
   1. Scenes are found under --input-dir (searched recursively) and assigned a
      date from their file name (PlanetScope scene IDs start with YYYYMMDD_HHMMSS).
   2. The period from --start to --end is split into consecutive windows of
-     --window-days days. A final window shorter than --window-days is still
-     composited and named with its actual dates.
+     --window-days days. Only complete windows are composited: any days left
+     over at the end of the period (fewer than --window-days) are ignored.
   3. For each window, every scene is resampled (nearest neighbour) onto one
      common output grid, NDVI = (NIR - red) / (NIR + red) is computed, and the
      UDM2 mask is applied:
@@ -92,11 +92,11 @@ def udm_path(scene_path, scene_suffix, udm_suffix):
 
 
 def make_windows(start, end, days):
-    """Consecutive [start, end) windows of `days` days; the last one may be shorter."""
+    """Consecutive, complete [start, end) windows of `days` days; leftover days are dropped."""
     windows = []
     w_start = start
-    while w_start < end:
-        w_end = min(w_start + timedelta(days=days), end)
+    while w_start + timedelta(days=days) <= end:
+        w_end = w_start + timedelta(days=days)
         windows.append((w_start, w_end))
         w_start = w_end
     return windows
